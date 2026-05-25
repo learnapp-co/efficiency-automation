@@ -2,13 +2,8 @@
   "name": "efficiency-automation",
   "version": "1.0.0",
   "description": "Team Efficiency Tracker with Slack Integration",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "node-fetch": "^2.6.1"
-  },
+  "type": "module",
   "engines": {
-    "node": ">=14.x"
+    "node": "22.x"
   }
 }
