@@ -520,7 +520,6 @@ class RealEfficiencyTracker {
                 members: [
                     { name: 'Supriya' },
                     { name: 'Tilak' },
-                    { name: 'Rishi' },
                     { name: 'Chandan' },
                     { name: 'Harshita' },
                     { name: 'Tushar' }
@@ -530,7 +529,8 @@ class RealEfficiencyTracker {
                     { name: 'Tilak' },
                     { name: 'Rishi' },
                     { name: 'Chandan' },
-                    { name: 'Harshita' }
+                    { name: 'Harshita' },
+                    { name: 'Tushar' }
                 ],
                 workLevels: this.techLevelMapping,
                 sheetRange: 'Tech - 2025!A1:BT1000'
@@ -538,7 +538,6 @@ class RealEfficiencyTracker {
             product: {
                 name: 'Product Team',
                 members: [
-                    { name: 'Akshay' },
                     { name: 'Ankush' },
                     { name: 'Vaishnavi' },
                     { name: 'Bhavya Oberoi' }
@@ -547,7 +546,8 @@ class RealEfficiencyTracker {
                     { name: 'Akshay' },
                     { name: 'Ankush' },
                     { name: 'Noor' },
-                    { name: 'Vaishnavi' }
+                    { name: 'Vaishnavi' },
+                    { name: 'Bhavya Oberoi' }
                 ],
                 workLevels: this.productLevelMapping,
                 sheetRange: 'Product - 2025!A1:BT1000'
@@ -558,8 +558,7 @@ class RealEfficiencyTracker {
                 members: [
                     { name: 'Vandit' },
                     { name: 'Abid' },
-                    { name: 'Mudit' },
-                    { name: 'Nikhil' }
+                    { name: 'Mudit' }
                 ],
                 historicalMembers: [
                     { name: 'Vandit' },
@@ -575,14 +574,16 @@ class RealEfficiencyTracker {
                 members: [
                     { name: 'Nishita' },
                     { name: 'Shuchita' },
-                    { name: 'Sahil Mathur' }
+                    { name: 'Sahil Mathur' },
+                    { name: 'Sanandan' }
                 ],
                 historicalMembers: [
                     { name: 'Nishita' },
                     { name: 'Akshat Mandalgi' },
                     { name: 'Urvish' },
                     { name: 'Meghna' },
-                    { name: 'Shuchita' }
+                    { name: 'Shuchita' },
+                    { name: 'Sahil Mathur' }
                 ],
                 workLevels: this.contentLevelMapping,
                 sheetRange: 'Content - 2025!A1:BT1000'
@@ -594,7 +595,6 @@ class RealEfficiencyTracker {
                     { name: 'Siya' },
                     { name: 'Rohit' },
                     { name: 'Anish' },
-                    { name: 'Swapnil' },
                     { name: 'Tanya' },
                     { name: 'Somya' },
                     { name: 'Satyam' }
