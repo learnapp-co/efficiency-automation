@@ -380,14 +380,16 @@ class RealEfficiencyTracker {
                     { name: 'Deepak', level: 'L1' },
                     { name: 'Anjali Rawat', level: 'L2' },
                     { name: 'Swati Juyal', level: 'L2' },
-                    { name: 'Deepak Kumar', level: 'L3' }
+                    { name: 'Deepak Kumar', level: 'L3' },
+                    { name: 'Dheeraj Rajvania', level: 'L1' } // Moved from Zero1-Bratish in June 2026
                 ],
                 historicalMembers: [
                     { name: 'Deepak', level: 'L1' },
                     { name: 'Anjali Rawat', level: 'L2' },
                     { name: 'Swati Juyal', level: 'L2' },
                     { name: 'Satyam Gupta', level: 'L3' },
-                    { name: 'Deepak Kumar', level: 'L3' }
+                    { name: 'Deepak Kumar', level: 'L3' },
+                    { name: 'Dheeraj Rajvania', level: 'L1' }
                 ],
                 // Note: Satyam Gupta removed from active members for Sept 2025 onwards but remains in historical data
                 workLevels: this.levelMapping,
@@ -417,13 +419,13 @@ class RealEfficiencyTracker {
             },
             'zero1': {
                 name: 'Zero1 - Bratish Team',
-                // Current active members (from November 2025: added Dheeraj and Manoj from Shorts)
+                // Current active members (June 2026: Dheeraj moved to B2B, Ajay added)
                 members: [
                     { name: 'Bratish' },
                     { name: 'Akriti Singh' },
                     { name: 'Mohd. Wasim' },
-                    { name: 'Dheeraj Rajvania' }, // Moved from Shorts in November 2025
-                    { name: 'Manoj Kumar' } // Moved from Shorts in November 2025
+                    { name: 'Manoj Kumar' },
+                    { name: 'Ajay' } // Added June 2026
                 ],
                 // Historical members (for data display in completed months)
                 historicalMembers: [
@@ -432,7 +434,8 @@ class RealEfficiencyTracker {
                     { name: 'Akriti Singh' },
                     { name: 'Mohd. Wasim' },
                     { name: 'Dheeraj Rajvania' },
-                    { name: 'Manoj Kumar' }
+                    { name: 'Manoj Kumar' },
+                    { name: 'Ajay' }
                 ],
                 workLevels: this.zero1LevelMapping,
                 sheetRange: 'Zero1 - Bratish - 2025!A1:BT1000'
@@ -540,7 +543,8 @@ class RealEfficiencyTracker {
                 members: [
                     { name: 'Ankush' },
                     { name: 'Vaishnavi' },
-                    { name: 'Bhavya Oberoi' }
+                    { name: 'Bhavya Oberoi' },
+                    { name: 'Noor' } // Re-added June 2026
                 ],
                 historicalMembers: [
                     { name: 'Akshay' },
@@ -11666,8 +11670,15 @@ class RealEfficiencyTracker {
 
     // Check if a month is locked for Company View (any team has it locked or it's in monthly view)
     isMonthLockedForCompany(monthYear) {
-        // EXPLICIT CHECK: All locked months (2025 and 2026)
-        const lockedMonths = ['January 2025', 'September 2025', 'October 2025', 'November 2025', 'December 2025', 'January 2026'];
+        // EXPLICIT CHECK: All completed months (everything before June 2026 is monthly-only)
+        const lockedMonths = [
+            // All 2025 months
+            'January 2025', 'February 2025', 'March 2025', 'April 2025', 'May 2025',
+            'June 2025', 'July 2025', 'August 2025', 'September 2025', 'October 2025',
+            'November 2025', 'December 2025',
+            // 2026 months up to May
+            'January 2026', 'February 2026', 'March 2026', 'April 2026', 'May 2026'
+        ];
         if (lockedMonths.includes(monthYear)) {
             console.log(`🔒 ${monthYear} is EXPLICITLY locked (completed data)`);
             return true;
