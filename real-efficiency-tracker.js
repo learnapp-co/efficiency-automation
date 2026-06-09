@@ -600,7 +600,6 @@ class RealEfficiencyTracker {
                     { name: 'Rohit' },
                     { name: 'Anish' },
                     { name: 'Tanya' },
-                    { name: 'Somya' },
                     { name: 'Satyam' }
                 ],
                 historicalMembers: [
@@ -4253,6 +4252,11 @@ class RealEfficiencyTracker {
             return filteredMembers;
         }
         
+        // For Social team: Swapnil is removed from active members (left the team)
+        if (team === 'social') {
+            return this.teamConfigs[team].members.filter(member => member.name !== 'Swapnil');
+        }
+
         // For all other teams, return all configured members
         console.log(`🔍 Returning all members for ${team}`);
         return this.teamConfigs[team].members;
