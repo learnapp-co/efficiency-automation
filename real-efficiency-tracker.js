@@ -381,7 +381,8 @@ class RealEfficiencyTracker {
                     { name: 'Anjali Rawat', level: 'L2' },
                     { name: 'Swati Juyal', level: 'L2' },
                     { name: 'Deepak Kumar', level: 'L3' },
-                    { name: 'Dheeraj Rajvania', level: 'L1' } // Moved from Zero1-Bratish in June 2026
+                    { name: 'Dheeraj Rajvania', level: 'L1' }, // Moved from Zero1-Bratish in June 2026
+                    { name: 'Satyavrat Sharma' } // Moved from Varsity in June 2026
                 ],
                 historicalMembers: [
                     { name: 'Deepak', level: 'L1' },
@@ -389,7 +390,8 @@ class RealEfficiencyTracker {
                     { name: 'Swati Juyal', level: 'L2' },
                     { name: 'Satyam Gupta', level: 'L3' },
                     { name: 'Deepak Kumar', level: 'L3' },
-                    { name: 'Dheeraj Rajvania', level: 'L1' }
+                    { name: 'Dheeraj Rajvania', level: 'L1' },
+                    { name: 'Satyavrat Sharma' }
                 ],
                 // Note: Satyam Gupta removed from active members for Sept 2025 onwards but remains in historical data
                 workLevels: this.levelMapping,
@@ -397,13 +399,13 @@ class RealEfficiencyTracker {
             },
             'varsity': {
                 name: 'Varsity Team',
-                // CORRECTED: These are the actual Varsity team members
                 members: [
                     { name: 'Aalim' },
-                    { name: 'Satyavrat Sharma' },
                     { name: 'Manish' },
                     { name: 'Apoorv Suman' },
-                    { name: 'Anmol Anand' }
+                    { name: 'Anmol Anand' },
+                    { name: 'Manoj Kumar' }, // Moved from Zero1-Bratish in June 2026
+                    { name: 'Vikas Kumar' } // Moved from Zero1-Harish in June 2026
                 ],
                 // Historical members (for data display in completed months)
                 historicalMembers: [
@@ -412,19 +414,20 @@ class RealEfficiencyTracker {
                     { name: 'Somya' }, // Left after March 2025
                     { name: 'Manish' },
                     { name: 'Apoorv Suman' },
-                    { name: 'Anmol Anand' }
+                    { name: 'Anmol Anand' },
+                    { name: 'Manoj Kumar' },
+                    { name: 'Vikas Kumar' }
                 ],
                 workLevels: this.varsityLevelMapping,
                 sheetRange: 'Varsity!A1:AZ1000'
             },
             'zero1': {
                 name: 'Zero1 - Bratish Team',
-                // Current active members (June 2026: Dheeraj moved to B2B, Ajay added)
+                // Current active members (June 2026: Manoj moved to Varsity)
                 members: [
                     { name: 'Bratish' },
                     { name: 'Akriti Singh' },
                     { name: 'Mohd. Wasim' },
-                    { name: 'Manoj Kumar' },
                     { name: 'Ajay' } // Added June 2026
                 ],
                 // Historical members (for data display in completed months)
@@ -442,15 +445,13 @@ class RealEfficiencyTracker {
             },
             harish: {
                 name: 'Zero1 - Harish Team',
-                // Current members (from November 2025: added Divyanshu, Abhishek, and Aayush from Shorts)
+                // Current members (June 2026: Vikas moved to Varsity, Aayush moved to Pre-production)
                 members: [
                     { name: 'Harish Rawat' },
                     { name: 'Rishabh Bangwal' },
                     { name: 'Pratik Sharma' },
-                    { name: 'Vikas Kumar' },
-                    { name: 'Divyanshu Mishra' }, // Moved from Shorts in November 2025
-                    { name: 'Abhishek Sharma' }, // Moved from Shorts in November 2025
-                    { name: 'Aayush Srivastava' } // Moved from Shorts in November 2025
+                    { name: 'Divyanshu Mishra' },
+                    { name: 'Abhishek Sharma' }
                 ],
                 // Historical members (for data display in completed months)
                 historicalMembers: [
@@ -562,13 +563,15 @@ class RealEfficiencyTracker {
                 members: [
                     { name: 'Vandit' },
                     { name: 'Abid' },
-                    { name: 'Mudit' }
+                    { name: 'Mudit' },
+                    { name: 'Aayush Srivastava' } // Moved from Zero1-Harish in June 2026
                 ],
                 historicalMembers: [
                     { name: 'Vandit' },
                     { name: 'Abid' },
                     { name: 'Mudit' },
-                    { name: 'Nikhil' }
+                    { name: 'Nikhil' },
+                    { name: 'Aayush Srivastava' }
                 ],
                 workLevels: this.preproductionLevelMapping,
                 sheetRange: 'Preproduction - 2025!A1:BT1000'
@@ -578,8 +581,7 @@ class RealEfficiencyTracker {
                 members: [
                     { name: 'Nishita' },
                     { name: 'Shuchita' },
-                    { name: 'Sahil Mathur' },
-                    { name: 'Sanandan' }
+                    { name: 'Sahil Mathur' }
                 ],
                 historicalMembers: [
                     { name: 'Nishita' },
@@ -587,7 +589,8 @@ class RealEfficiencyTracker {
                     { name: 'Urvish' },
                     { name: 'Meghna' },
                     { name: 'Shuchita' },
-                    { name: 'Sahil Mathur' }
+                    { name: 'Sahil Mathur' },
+                    { name: 'Sanandan' }
                 ],
                 workLevels: this.contentLevelMapping,
                 sheetRange: 'Content - 2025!A1:BT1000'
