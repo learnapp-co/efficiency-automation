@@ -380,7 +380,6 @@ class RealEfficiencyTracker {
                     { name: 'Deepak', level: 'L1' },
                     { name: 'Anjali Rawat', level: 'L2' },
                     { name: 'Swati Juyal', level: 'L2' },
-                    { name: 'Deepak Kumar', level: 'L3' },
                     { name: 'Dheeraj Rajvania', level: 'L1' }, // Moved from Zero1-Bratish in June 2026
                     { name: 'Satyavrat Sharma' } // Moved from Varsity in June 2026
                 ],
@@ -423,12 +422,13 @@ class RealEfficiencyTracker {
             },
             'zero1': {
                 name: 'Zero1 - Bratish Team',
-                // Current active members (June 2026: Manoj moved to Varsity)
+                // Current active members (June 2026: Manoj moved to Varsity, Deepak Kumar added from B2B)
                 members: [
                     { name: 'Bratish' },
                     { name: 'Akriti Singh' },
                     { name: 'Mohd. Wasim' },
-                    { name: 'Ajay' } // Added June 2026
+                    { name: 'Ajay' }, // Added June 2026
+                    { name: 'Deepak Kumar' } // Moved from B2B in June 2026
                 ],
                 // Historical members (for data display in completed months)
                 historicalMembers: [
@@ -438,7 +438,8 @@ class RealEfficiencyTracker {
                     { name: 'Mohd. Wasim' },
                     { name: 'Dheeraj Rajvania' },
                     { name: 'Manoj Kumar' },
-                    { name: 'Ajay' }
+                    { name: 'Ajay' },
+                    { name: 'Deepak Kumar' }
                 ],
                 workLevels: this.zero1LevelMapping,
                 sheetRange: 'Zero1 - Bratish - 2025!A1:BT1000'
