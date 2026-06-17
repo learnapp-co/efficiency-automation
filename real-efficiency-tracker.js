@@ -13062,7 +13062,13 @@ class RealEfficiencyTracker {
             if (response.ok) {
                 const result = await response.json();
                 if (result.success) {
-                    this.showMessage('✅ Report sent to Slack successfully!', 'success');
+                    if (result.delivery === 'slack-bot-file') {
+                        this.showMessage('✅ Report image uploaded to Slack via bot!', 'success');
+                    } else if (result.botError) {
+                        this.showMessage(`⚠️ Bot upload failed (${result.botError.error}). Sent via webhook fallback.`, 'warning');
+                    } else {
+                        this.showMessage('✅ Report sent to Slack successfully!', 'success');
+                    }
                 } else {
                     throw new Error(`Slack API error: ${result.error || 'Unknown error'}`);
                 }
