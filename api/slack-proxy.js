@@ -1,7 +1,7 @@
 // Vercel serverless function to proxy Slack webhook requests
 // This bypasses CORS issues when sending Slack messages from the browser
 
-async function uploadImageToSlack(imageData, messageText) {
+async function uploadImageToSlack(imageData, messageText, mimeType = 'image/jpeg') {
     const token = process.env.SLACK_BOT_TOKEN;
     const channel = process.env.SLACK_CHANNEL_ID;
     if (!token || !channel) {
@@ -10,7 +10,7 @@ async function uploadImageToSlack(imageData, messageText) {
 
     const buffer = Buffer.from(imageData, 'base64');
     const formData = new FormData();
-    formData.append('file', new Blob([buffer], { type: 'image/png' }), 'efficiency-chart.png');
+    formData.append('file', new Blob([buffer], { type: mimeType }), 'efficiency-chart.jpg');
     formData.append('channels', channel);
     formData.append('initial_comment', messageText);
     formData.append('title', 'Efficiency Report');
@@ -29,6 +29,24 @@ async function uploadImageToSlack(imageData, messageText) {
 
     console.log('⚠️ Slack direct upload failed:', result.error);
     return null;
+}
+
+async function uploadWithFormData(url, formData, label) {
+    const response = await fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'User-Agent': 'efficiency-automation/1.0'
+        }
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        console.log(`⚠️ ${label} upload failed:`, response.status, errorText.slice(0, 200));
+        return null;
+    }
+
+    return response;
 }
 
 async function uploadImageToImgbb(imageData) {
@@ -56,35 +74,69 @@ async function uploadImageToImgbb(imageData) {
     return null;
 }
 
-async function uploadImageToCatbox(imageData) {
+async function uploadImageTo0x0(imageData, mimeType = 'image/jpeg') {
     const buffer = Buffer.from(imageData, 'base64');
     const formData = new FormData();
-    formData.append('reqtype', 'fileupload');
-    formData.append('fileToUpload', new Blob([buffer], { type: 'image/png' }), 'efficiency-chart.png');
+    formData.append('file', new Blob([buffer], { type: mimeType }), 'efficiency-chart.jpg');
 
-    const response = await fetch('https://catbox.moe/user/api.php', {
-        method: 'POST',
-        body: formData
-    });
-
-    if (!response.ok) {
+    const response = await uploadWithFormData('https://0x0.st', formData, '0x0.st');
+    if (!response) {
         return null;
     }
 
     const imageUrl = (await response.text()).trim();
     if (imageUrl.startsWith('https://')) {
-        console.log('✅ Image uploaded to catbox:', imageUrl);
+        console.log('✅ Image uploaded to 0x0.st:', imageUrl);
         return imageUrl;
     }
 
+    console.log('⚠️ 0x0.st returned unexpected response:', imageUrl.slice(0, 200));
     return null;
 }
 
-async function resolvePublicImageUrl(imageData) {
-    return (
-        await uploadImageToImgbb(imageData) ||
-        await uploadImageToCatbox(imageData)
-    );
+async function uploadImageToFreeimage(imageData) {
+    const apiKey = process.env.FREEIMAGE_API_KEY || '6d207e02198a847aa98d0a2a901485a5';
+    const response = await fetch('https://freeimage.host/api/1/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `key=${apiKey}&source=${encodeURIComponent(imageData)}&format=json`
+    });
+
+    if (!response.ok) {
+        console.log('⚠️ freeimage.host upload failed:', response.status);
+        return null;
+    }
+
+    const result = await response.json();
+    const imageUrl = result?.image?.display_url || result?.image?.url;
+    if (result.status_code === 200 && imageUrl) {
+        console.log('✅ Image uploaded to freeimage.host:', imageUrl);
+        return imageUrl;
+    }
+
+    console.log('⚠️ freeimage.host returned unexpected response:', result);
+    return null;
+}
+
+async function resolvePublicImageUrl(imageData, mimeType = 'image/jpeg') {
+    const uploaders = [
+        (data) => uploadImageToImgbb(data),
+        (data) => uploadImageTo0x0(data, mimeType),
+        (data) => uploadImageToFreeimage(data)
+    ];
+
+    for (const upload of uploaders) {
+        try {
+            const imageUrl = await upload(imageData);
+            if (imageUrl) {
+                return imageUrl;
+            }
+        } catch (error) {
+            console.error('❌ Image upload attempt failed:', error.message);
+        }
+    }
+
+    return null;
 }
 
 function buildSlackPayload(messageData, imageUrl) {
@@ -109,7 +161,6 @@ function buildSlackPayload(messageData, imageUrl) {
 }
 
 export default async function handler(req, res) {
-    // Only allow POST requests
     if (req.method !== 'POST') {
         return res.status(405).json({
             error: 'Method not allowed. This endpoint only accepts POST requests.'
@@ -118,7 +169,7 @@ export default async function handler(req, res) {
 
     try {
         const webhookUrl = process.env.SLACK_WEBHOOK_URL;
-        const { messageData, imageUrl, imageData } = req.body;
+        const { messageData, imageUrl, imageData, imageMimeType } = req.body;
 
         if (!webhookUrl) {
             return res.status(500).json({
@@ -140,9 +191,8 @@ export default async function handler(req, res) {
 
         console.log('📤 Forwarding request to Slack webhook...');
 
-        // Prefer uploading the chart directly to Slack when a bot token is configured
         if (imageData) {
-            const slackUpload = await uploadImageToSlack(imageData, messageData.text);
+            const slackUpload = await uploadImageToSlack(imageData, messageData.text, imageMimeType || 'image/jpeg');
             if (slackUpload) {
                 return res.status(200).json({
                     success: true,
@@ -154,12 +204,8 @@ export default async function handler(req, res) {
         let resolvedImageUrl = imageUrl || null;
 
         if (!resolvedImageUrl && imageData) {
-            try {
-                console.log('📤 Uploading base64 image to public host...');
-                resolvedImageUrl = await resolvePublicImageUrl(imageData);
-            } catch (uploadError) {
-                console.error('❌ Error uploading image:', uploadError);
-            }
+            console.log('📤 Uploading base64 image to public host...');
+            resolvedImageUrl = await resolvePublicImageUrl(imageData, imageMimeType || 'image/jpeg');
         }
 
         const slackPayload = buildSlackPayload(messageData, resolvedImageUrl);
@@ -179,7 +225,8 @@ export default async function handler(req, res) {
             console.log('✅ Message sent to Slack successfully');
             return res.status(200).json({
                 success: true,
-                message: 'Message sent to Slack successfully'
+                message: 'Message sent to Slack successfully',
+                imageUploaded: Boolean(resolvedImageUrl)
             });
         }
 

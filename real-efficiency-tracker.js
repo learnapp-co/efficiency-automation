@@ -12726,8 +12726,8 @@ class RealEfficiencyTracker {
                 allowTaint: true
             });
 
-            // Convert to blob
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            // Convert to blob (JPEG keeps payload smaller for Slack upload)
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
             
             // Get current data for text summary
             const weekSummary = this.generateWeekSummaryForSlack();
@@ -12770,8 +12770,8 @@ class RealEfficiencyTracker {
                 allowTaint: true
             });
 
-            // Convert to blob
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            // Convert to blob (JPEG keeps payload smaller for Slack upload)
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
             
             // Get current data for text summary
             const monthlySummary = this.generateMonthlySummaryForSlack();
@@ -12862,6 +12862,7 @@ class RealEfficiencyTracker {
         try {
             let messageText;
             let imageData;
+            let imageMimeType = 'image/jpeg';
             let isBase64 = false;
 
         // Handle different call signatures
@@ -12887,10 +12888,13 @@ class RealEfficiencyTracker {
                 // Convert blob to base64 for team view
                 if (summaryTextOrBlob instanceof Blob) {
                     const reader = new FileReader();
-                    imageData = await new Promise(resolve => {
-                        reader.onload = () => resolve(reader.result.split(',')[1]);
+                    const dataUrl = await new Promise(resolve => {
+                        reader.onload = () => resolve(reader.result);
                         reader.readAsDataURL(summaryTextOrBlob);
                     });
+                    const [meta, base64] = dataUrl.split(',');
+                    imageMimeType = meta?.match(/data:(.*?);/)?.[1] || summaryTextOrBlob.type || 'image/jpeg';
+                    imageData = base64;
                     isBase64 = true;
                 }
             } else {
@@ -12911,8 +12915,9 @@ class RealEfficiencyTracker {
                 },
                 body: JSON.stringify({
                     messageData: payload,
-                    imageData: isBase64 ? imageData : null, // Pass base64 data if available
-                    imageUrl: !isBase64 ? imageData : null  // Pass image URL if not base64
+                    imageData: isBase64 ? imageData : null,
+                    imageMimeType: isBase64 ? imageMimeType : null,
+                    imageUrl: !isBase64 ? imageData : null
                 })
             });
 
@@ -12997,8 +13002,8 @@ class RealEfficiencyTracker {
                 height: companyContent.scrollHeight
             });
 
-            // Convert canvas to base64
-            const base64Image = canvas.toDataURL('image/png').split(',')[1];
+            // Convert canvas to base64 (JPEG keeps payload smaller for Slack upload)
+            const base64Image = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
             
             // Generate company summary for Slack
             const summary = this.generateCompanySummaryForSlack(periodType, periodSelect);
