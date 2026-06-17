@@ -12842,7 +12842,7 @@ class RealEfficiencyTracker {
         };
     }
 
-    async captureSlackReportImage(element, { scale = 3, width = null } = {}) {
+    async captureSlackReportImage(element, { scale = 3, width = null, format = 'image/png', quality = 1 } = {}) {
         const captureWidth = width || element.scrollWidth;
         const canvas = await html2canvas(element, {
             backgroundColor: '#ffffff',
@@ -12861,7 +12861,7 @@ class RealEfficiencyTracker {
                     return;
                 }
                 resolve(result);
-            }, 'image/png');
+            }, format, quality);
         });
 
         return blob;
@@ -12990,17 +12990,22 @@ class RealEfficiencyTracker {
         const exportState = this.applySlackCompanyExportStyles(companyContent);
         try {
             await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-            return await this.captureSlackReportImage(companyContent, { scale: 2, width: 1400 });
+            return await this.captureSlackReportImage(companyContent, {
+                scale: 2,
+                width: 1400,
+                format: 'image/jpeg',
+                quality: 0.92
+            });
         } finally {
             this.restoreSlackCompanyExportStyles(companyContent, exportState);
         }
     }
 
-    async sendToSlack(summaryTextOrBlob, base64ImageOrReportType, summaryDataOrType = null) {
+    async sendToSlack(summaryTextOrBlob, base64ImageOrReportType, summaryDataOrType = null, companyImageMimeType = null) {
         try {
             let messageText;
             let imageData;
-            let imageMimeType = 'image/png';
+            let imageMimeType = companyImageMimeType || 'image/png';
             let isBase64 = false;
 
         // Handle different call signatures
@@ -13009,6 +13014,9 @@ class RealEfficiencyTracker {
             messageText = summaryTextOrBlob;
             imageData = base64ImageOrReportType;
             isBase64 = summaryDataOrType === 'base64';
+            if (companyImageMimeType) {
+                imageMimeType = companyImageMimeType;
+            }
             } else if (summaryDataOrType) {
                 // Team View: sendToSlack(blob, reportType, summaryData)
                 const reportType = base64ImageOrReportType;
@@ -13144,14 +13152,15 @@ class RealEfficiencyTracker {
                 reader.onload = () => resolve(reader.result);
                 reader.readAsDataURL(blob);
             });
-            const base64Image = dataUrl.split(',')[1];
+            const [meta, base64Image] = dataUrl.split(',');
+            const imageMimeType = meta?.match(/data:(.*?);/)?.[1] || blob.type || 'image/jpeg';
             
             // Generate company summary for Slack
             const summary = this.generateCompanySummaryForSlack(periodType, periodSelect);
             
             // Send image directly as base64 data to Slack
             this.showMessage('📤 Sending report with image to Slack...', 'info');
-            await this.sendToSlack(summary, base64Image, 'base64');
+            await this.sendToSlack(summary, base64Image, 'base64', imageMimeType);
             this.showMessage('✅ Company report with image sent to Slack successfully!', 'success');
 
         } catch (error) {

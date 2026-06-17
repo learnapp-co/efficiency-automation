@@ -31,27 +31,17 @@ async function postSlackMessage(token, channel, text) {
     return { ok: false, error: result.error, step: 'chat.postMessage' };
 }
 
-function buildUploadFormData(buffer, filename, mimeType, fields = {}) {
-    const formData = new FormData();
-    formData.append('file', new Blob([buffer], { type: mimeType }), filename);
-
-    Object.entries(fields).forEach(([key, value]) => {
-        formData.append(key, value);
-    });
-
-    return formData;
-}
-
 async function uploadImageViaFilesUpload(token, channel, buffer, filename, mimeType, messageText) {
-    const formData = buildUploadFormData(buffer, filename, mimeType, {
-        channels: channel,
-        initial_comment: messageText,
-        title: 'Efficiency Report'
-    });
+    const formData = new FormData();
+    formData.append('token', token);
+    formData.append('file', new Blob([buffer], { type: mimeType }), filename);
+    formData.append('channels', channel);
+    formData.append('initial_comment', messageText);
+    formData.append('filename', filename);
+    formData.append('title', 'Efficiency Report');
 
     const response = await fetch('https://slack.com/api/files.upload', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
         body: formData
     });
 
@@ -61,23 +51,36 @@ async function uploadImageViaFilesUpload(token, channel, buffer, filename, mimeT
         return { ok: true, permalink: result.file?.permalink || 'slack-upload', method: 'files.upload' };
     }
 
-    return { ok: false, error: result.error, step: 'files.upload' };
+    return {
+        ok: false,
+        error: result.error,
+        step: 'files.upload',
+        details: result.response_metadata?.messages?.join(', ')
+    };
 }
 
 async function uploadImageViaExternalFlow(token, channel, buffer, filename, mimeType, messageText) {
+    const fileLength = Math.floor(buffer.length);
     const uploadUrlResult = await slackApi('files.getUploadURLExternal', token, {
         filename,
-        length: buffer.length
+        length: fileLength
     });
 
     if (!uploadUrlResult.ok) {
-        return { ok: false, error: uploadUrlResult.error, step: 'files.getUploadURLExternal' };
+        return {
+            ok: false,
+            error: uploadUrlResult.error,
+            step: 'files.getUploadURLExternal',
+            details: uploadUrlResult.response_metadata?.messages?.join(', ')
+        };
     }
 
-    const formData = buildUploadFormData(buffer, filename, mimeType, { filename });
     const binaryUpload = await fetch(uploadUrlResult.upload_url, {
         method: 'POST',
-        body: formData
+        headers: {
+            'Content-Type': 'application/octet-stream'
+        },
+        body: buffer
     });
 
     if (!binaryUpload.ok) {
@@ -108,7 +111,12 @@ async function uploadImageViaExternalFlow(token, channel, buffer, filename, mime
         };
     }
 
-    return { ok: false, error: completeResult.error, step: 'files.completeUploadExternal' };
+    return {
+        ok: false,
+        error: completeResult.error,
+        step: 'files.completeUploadExternal',
+        details: completeResult.response_metadata?.messages?.join(', ')
+    };
 }
 
 async function uploadImageToSlack(imageData, messageText, mimeType = 'image/png') {
@@ -118,16 +126,25 @@ async function uploadImageToSlack(imageData, messageText, mimeType = 'image/png'
         return { ok: false, error: 'missing_bot_config', step: 'config' };
     }
 
-    const buffer = Buffer.from(imageData, 'base64');
+    const cleanedImageData = imageData.trim().replace(/\s/g, '');
+    const buffer = Buffer.from(cleanedImageData, 'base64');
     const extension = mimeType === 'image/jpeg' ? 'jpg' : 'png';
     const filename = `efficiency-report.${extension}`;
 
-    console.log('📦 Slack image payload size:', buffer.length, 'bytes');
+    console.log('📦 Slack image payload size:', buffer.length, 'bytes', mimeType);
 
-    if (buffer.length < 5000) {
+    if (!buffer.length || buffer.length < 5000) {
         return {
             ok: false,
             error: `image_too_small (${buffer.length} bytes)`,
+            step: 'validate'
+        };
+    }
+
+    if (buffer.length > 9 * 1024 * 1024) {
+        return {
+            ok: false,
+            error: `image_too_large (${Math.round(buffer.length / 1024 / 1024)}MB)`,
             step: 'validate'
         };
     }
@@ -137,22 +154,26 @@ async function uploadImageToSlack(imageData, messageText, mimeType = 'image/png'
         () => uploadImageViaExternalFlow(token, channel, buffer, filename, mimeType, messageText)
     ];
 
-    let lastError = null;
+    const errors = [];
     for (const attempt of uploadAttempts) {
         try {
             const result = await attempt();
             if (result.ok) {
                 return result;
             }
-            lastError = result;
+            errors.push(`${result.step}: ${result.error}${result.details ? ` (${result.details})` : ''}`);
             console.log('⚠️ Slack upload attempt failed:', result);
         } catch (error) {
-            lastError = { ok: false, error: error.message, step: 'upload-exception' };
+            errors.push(`upload-exception: ${error.message}`);
             console.error('❌ Slack upload exception:', error);
         }
     }
 
-    return lastError || { ok: false, error: 'unknown_error', step: 'upload' };
+    return {
+        ok: false,
+        error: errors.join(' | '),
+        step: 'upload'
+    };
 }
 
 async function uploadWithFormData(url, formData, label) {
