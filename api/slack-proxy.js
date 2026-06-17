@@ -1,7 +1,7 @@
 // Vercel serverless function to proxy Slack webhook requests
 // This bypasses CORS issues when sending Slack messages from the browser
 
-async function uploadImageToSlack(imageData, messageText, mimeType = 'image/jpeg') {
+async function uploadImageToSlack(imageData, messageText, mimeType = 'image/png') {
     const token = process.env.SLACK_BOT_TOKEN;
     const channel = process.env.SLACK_CHANNEL_ID;
     if (!token || !channel) {
@@ -10,7 +10,7 @@ async function uploadImageToSlack(imageData, messageText, mimeType = 'image/jpeg
 
     const buffer = Buffer.from(imageData, 'base64');
     const formData = new FormData();
-    formData.append('file', new Blob([buffer], { type: mimeType }), 'efficiency-chart.jpg');
+    formData.append('file', new Blob([buffer], { type: mimeType }), 'efficiency-chart.png');
     formData.append('channels', channel);
     formData.append('initial_comment', messageText);
     formData.append('title', 'Efficiency Report');
@@ -74,10 +74,10 @@ async function uploadImageToImgbb(imageData) {
     return null;
 }
 
-async function uploadImageTo0x0(imageData, mimeType = 'image/jpeg') {
+async function uploadImageTo0x0(imageData, mimeType = 'image/png') {
     const buffer = Buffer.from(imageData, 'base64');
     const formData = new FormData();
-    formData.append('file', new Blob([buffer], { type: mimeType }), 'efficiency-chart.jpg');
+    formData.append('file', new Blob([buffer], { type: mimeType }), 'efficiency-chart.png');
 
     const response = await uploadWithFormData('https://0x0.st', formData, '0x0.st');
     if (!response) {
@@ -118,7 +118,7 @@ async function uploadImageToFreeimage(imageData) {
     return null;
 }
 
-async function resolvePublicImageUrl(imageData, mimeType = 'image/jpeg') {
+async function resolvePublicImageUrl(imageData, mimeType = 'image/png') {
     const uploaders = [
         (data) => uploadImageToImgbb(data),
         (data) => uploadImageTo0x0(data, mimeType),
@@ -192,7 +192,7 @@ export default async function handler(req, res) {
         console.log('📤 Forwarding request to Slack webhook...');
 
         if (imageData) {
-            const slackUpload = await uploadImageToSlack(imageData, messageData.text, imageMimeType || 'image/jpeg');
+            const slackUpload = await uploadImageToSlack(imageData, messageData.text, imageMimeType || 'image/png');
             if (slackUpload) {
                 return res.status(200).json({
                     success: true,
@@ -205,7 +205,7 @@ export default async function handler(req, res) {
 
         if (!resolvedImageUrl && imageData) {
             console.log('📤 Uploading base64 image to public host...');
-            resolvedImageUrl = await resolvePublicImageUrl(imageData, imageMimeType || 'image/jpeg');
+            resolvedImageUrl = await resolvePublicImageUrl(imageData, imageMimeType || 'image/png');
         }
 
         const slackPayload = buildSlackPayload(messageData, resolvedImageUrl);

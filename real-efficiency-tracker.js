@@ -12718,16 +12718,8 @@ class RealEfficiencyTracker {
                 return;
             }
 
-            // Generate image from the chart
-            const canvas = await html2canvas(chartElement, {
-                backgroundColor: '#ffffff',
-                scale: 2,
-                useCORS: true,
-                allowTaint: true
-            });
-
-            // Convert to blob (JPEG keeps payload smaller for Slack upload)
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+            // Generate sharp PNG screenshot for Slack
+            const blob = await this.captureSlackReportImage(chartElement, { scale: 3 });
             
             // Get current data for text summary
             const weekSummary = this.generateWeekSummaryForSlack();
@@ -12762,16 +12754,8 @@ class RealEfficiencyTracker {
                 return;
             }
 
-            // Generate image from the monthly view
-            const canvas = await html2canvas(monthlyElement, {
-                backgroundColor: '#ffffff',
-                scale: 2,
-                useCORS: true,
-                allowTaint: true
-            });
-
-            // Convert to blob (JPEG keeps payload smaller for Slack upload)
-            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+            // Generate sharp PNG screenshot for Slack
+            const blob = await this.captureSlackReportImage(monthlyElement, { scale: 3 });
             
             // Get current data for text summary
             const monthlySummary = this.generateMonthlySummaryForSlack();
@@ -12858,11 +12842,34 @@ class RealEfficiencyTracker {
         };
     }
 
+    async captureSlackReportImage(element, { scale = 3 } = {}) {
+        const canvas = await html2canvas(element, {
+            backgroundColor: '#ffffff',
+            scale,
+            useCORS: true,
+            allowTaint: true,
+            width: element.scrollWidth,
+            height: element.scrollHeight
+        });
+
+        const blob = await new Promise((resolve, reject) => {
+            canvas.toBlob(result => {
+                if (!result) {
+                    reject(new Error('Failed to capture report image'));
+                    return;
+                }
+                resolve(result);
+            }, 'image/png');
+        });
+
+        return blob;
+    }
+
     async sendToSlack(summaryTextOrBlob, base64ImageOrReportType, summaryDataOrType = null) {
         try {
             let messageText;
             let imageData;
-            let imageMimeType = 'image/jpeg';
+            let imageMimeType = 'image/png';
             let isBase64 = false;
 
         // Handle different call signatures
@@ -12992,18 +12999,13 @@ class RealEfficiencyTracker {
                 return;
             }
 
-            // Generate image from the company view
-            const canvas = await html2canvas(companyContent, {
-                backgroundColor: '#ffffff',
-                scale: 2,
-                useCORS: true,
-                allowTaint: true,
-                width: companyContent.scrollWidth,
-                height: companyContent.scrollHeight
+            const blob = await this.captureSlackReportImage(companyContent, { scale: 2 });
+            const reader = new FileReader();
+            const dataUrl = await new Promise(resolve => {
+                reader.onload = () => resolve(reader.result);
+                reader.readAsDataURL(blob);
             });
-
-            // Convert canvas to base64 (JPEG keeps payload smaller for Slack upload)
-            const base64Image = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+            const base64Image = dataUrl.split(',')[1];
             
             // Generate company summary for Slack
             const summary = this.generateCompanySummaryForSlack(periodType, periodSelect);
