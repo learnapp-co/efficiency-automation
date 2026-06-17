@@ -12842,14 +12842,16 @@ class RealEfficiencyTracker {
         };
     }
 
-    async captureSlackReportImage(element, { scale = 3 } = {}) {
+    async captureSlackReportImage(element, { scale = 3, width = null } = {}) {
+        const captureWidth = width || element.scrollWidth;
         const canvas = await html2canvas(element, {
             backgroundColor: '#ffffff',
             scale,
             useCORS: true,
             allowTaint: true,
-            width: element.scrollWidth,
-            height: element.scrollHeight
+            width: captureWidth,
+            height: element.scrollHeight,
+            windowWidth: captureWidth
         });
 
         const blob = await new Promise((resolve, reject) => {
@@ -12863,6 +12865,135 @@ class RealEfficiencyTracker {
         });
 
         return blob;
+    }
+
+    applySlackCompanyExportStyles(companyContent) {
+        const state = {
+            content: {
+                width: companyContent.style.width,
+                maxWidth: companyContent.style.maxWidth
+            },
+            chart: {},
+            rows: [],
+            hiddenElements: []
+        };
+
+        companyContent.style.width = '1400px';
+        companyContent.style.maxWidth = '1400px';
+
+        companyContent.querySelectorAll('#company-period-info button, #company-period-info div[style*="margin-top: 15px"]').forEach(element => {
+            state.hiddenElements.push({ element, display: element.style.display });
+            element.style.display = 'none';
+        });
+
+        const chart = document.getElementById('member-performance-chart');
+        if (chart) {
+            state.chart = {
+                display: chart.style.display,
+                gridTemplateColumns: chart.style.gridTemplateColumns,
+                gap: chart.style.gap,
+                columnGap: chart.style.columnGap
+            };
+            chart.style.display = 'grid';
+            chart.style.gridTemplateColumns = '1fr 1fr';
+            chart.style.gap = '6px 24px';
+
+            chart.querySelectorAll(':scope > div').forEach(row => {
+                const nameEl = row.children[0];
+                const teamEl = row.children[1];
+                const barEl = row.children[2];
+                const barFill = barEl?.querySelector(':scope > div');
+                const pctSpan = barFill?.querySelector('span');
+
+                state.rows.push({
+                    row: { marginBottom: row.style.marginBottom },
+                    name: nameEl ? { fontSize: nameEl.style.fontSize, width: nameEl.style.width } : null,
+                    team: teamEl ? { fontSize: teamEl.style.fontSize, width: teamEl.style.width } : null,
+                    bar: barEl ? { maxWidth: barEl.style.maxWidth, height: barEl.style.height } : null,
+                    pct: pctSpan ? { fontSize: pctSpan.style.fontSize } : null
+                });
+
+                row.style.marginBottom = '4px';
+                if (nameEl) {
+                    nameEl.style.fontSize = '13px';
+                    nameEl.style.width = '150px';
+                }
+                if (teamEl) {
+                    teamEl.style.fontSize = '12px';
+                    teamEl.style.width = '90px';
+                }
+                if (barEl) {
+                    barEl.style.maxWidth = '480px';
+                    barEl.style.height = '24px';
+                }
+                if (pctSpan) {
+                    pctSpan.style.fontSize = '12px';
+                }
+            });
+        }
+
+        return state;
+    }
+
+    restoreSlackCompanyExportStyles(companyContent, state) {
+        if (!state) {
+            return;
+        }
+
+        companyContent.style.width = state.content.width;
+        companyContent.style.maxWidth = state.content.maxWidth;
+
+        state.hiddenElements.forEach(({ element, display }) => {
+            element.style.display = display;
+        });
+
+        const chart = document.getElementById('member-performance-chart');
+        if (chart && state.chart) {
+            chart.style.display = state.chart.display;
+            chart.style.gridTemplateColumns = state.chart.gridTemplateColumns;
+            chart.style.gap = state.chart.gap;
+            chart.style.columnGap = state.chart.columnGap;
+
+            chart.querySelectorAll(':scope > div').forEach((row, index) => {
+                const rowState = state.rows[index];
+                if (!rowState) {
+                    return;
+                }
+
+                row.style.marginBottom = rowState.row.marginBottom;
+
+                const nameEl = row.children[0];
+                const teamEl = row.children[1];
+                const barEl = row.children[2];
+                const pctSpan = barEl?.querySelector(':scope > div span');
+
+                if (nameEl && rowState.name) {
+                    nameEl.style.fontSize = rowState.name.fontSize;
+                    nameEl.style.width = rowState.name.width;
+                }
+                if (teamEl && rowState.team) {
+                    teamEl.style.fontSize = rowState.team.fontSize;
+                    teamEl.style.width = rowState.team.width;
+                }
+                if (barEl && rowState.bar) {
+                    barEl.style.maxWidth = rowState.bar.maxWidth;
+                    barEl.style.height = rowState.bar.height;
+                }
+                if (pctSpan && rowState.pct) {
+                    pctSpan.style.fontSize = rowState.pct.fontSize;
+                }
+            });
+        }
+    }
+
+    async captureCompanyReportForSlack(companyContent) {
+        const exportState = this.applySlackCompanyExportStyles(companyContent);
+        try {
+            await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+            return await this.captureSlackReportImage(companyContent, { scale: 2, width: 1400 });
+        } finally {
+            this.restoreSlackCompanyExportStyles(companyContent, exportState);
+        }
     }
 
     async sendToSlack(summaryTextOrBlob, base64ImageOrReportType, summaryDataOrType = null) {
@@ -12999,7 +13130,7 @@ class RealEfficiencyTracker {
                 return;
             }
 
-            const blob = await this.captureSlackReportImage(companyContent, { scale: 2 });
+            const blob = await this.captureCompanyReportForSlack(companyContent);
             const reader = new FileReader();
             const dataUrl = await new Promise(resolve => {
                 reader.onload = () => resolve(reader.result);
