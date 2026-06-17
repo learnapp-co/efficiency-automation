@@ -1,6 +1,36 @@
 // Vercel serverless function to proxy Slack webhook requests
 // This bypasses CORS issues when sending Slack messages from the browser
 
+async function slackApi(method, token, body) {
+    const response = await fetch(`https://slack.com/api/${method}`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json; charset=utf-8'
+        },
+        body: JSON.stringify(body)
+    });
+
+    return response.json();
+}
+
+async function postSlackMessage(token, channel, messageData) {
+    const result = await slackApi('chat.postMessage', token, {
+        channel,
+        text: messageData.text,
+        username: messageData.username,
+        icon_emoji: messageData.icon_emoji
+    });
+
+    if (result.ok) {
+        console.log('✅ Message posted to Slack via bot');
+        return true;
+    }
+
+    console.log('⚠️ chat.postMessage failed:', result.error);
+    return false;
+}
+
 async function uploadImageToSlack(imageData, messageText, mimeType = 'image/png') {
     const token = process.env.SLACK_BOT_TOKEN;
     const channel = process.env.SLACK_CHANNEL_ID;
@@ -9,25 +39,47 @@ async function uploadImageToSlack(imageData, messageText, mimeType = 'image/png'
     }
 
     const buffer = Buffer.from(imageData, 'base64');
-    const formData = new FormData();
-    formData.append('file', new Blob([buffer], { type: mimeType }), 'efficiency-chart.png');
-    formData.append('channels', channel);
-    formData.append('initial_comment', messageText);
-    formData.append('title', 'Efficiency Report');
+    const extension = mimeType === 'image/jpeg' ? 'jpg' : 'png';
+    const filename = `efficiency-report.${extension}`;
 
-    const response = await fetch('https://slack.com/api/files.upload', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData
+    const uploadUrlResult = await slackApi('files.getUploadURLExternal', token, {
+        filename,
+        length: buffer.length
     });
 
-    const result = await response.json();
-    if (result.ok) {
-        console.log('✅ Image uploaded directly to Slack');
-        return result.file?.permalink || 'slack-upload';
+    if (!uploadUrlResult.ok) {
+        console.log('⚠️ files.getUploadURLExternal failed:', uploadUrlResult.error);
+        return null;
     }
 
-    console.log('⚠️ Slack direct upload failed:', result.error);
+    const binaryUpload = await fetch(uploadUrlResult.upload_url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': mimeType
+        },
+        body: buffer
+    });
+
+    if (!binaryUpload.ok) {
+        console.log('⚠️ Slack binary upload failed:', binaryUpload.status, binaryUpload.statusText);
+        return null;
+    }
+
+    const completeResult = await slackApi('files.completeUploadExternal', token, {
+        files: [{
+            id: uploadUrlResult.file_id,
+            title: 'Efficiency Report'
+        }],
+        channel_id: channel,
+        initial_comment: messageText
+    });
+
+    if (completeResult.ok) {
+        console.log('✅ Image uploaded directly to Slack via bot');
+        return completeResult.files?.[0]?.permalink || 'slack-upload';
+    }
+
+    console.log('⚠️ files.completeUploadExternal failed:', completeResult.error);
     return null;
 }
 
@@ -160,6 +212,21 @@ function buildSlackPayload(messageData, imageUrl) {
     };
 }
 
+async function sendViaWebhook(webhookUrl, slackPayload) {
+    const slackResponse = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(slackPayload)
+    });
+
+    if (!slackResponse.ok) {
+        const errorText = await slackResponse.text();
+        throw new Error(errorText || slackResponse.statusText);
+    }
+}
+
 export default async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({
@@ -169,13 +236,9 @@ export default async function handler(req, res) {
 
     try {
         const webhookUrl = process.env.SLACK_WEBHOOK_URL;
+        const botToken = process.env.SLACK_BOT_TOKEN;
+        const botChannel = process.env.SLACK_CHANNEL_ID;
         const { messageData, imageUrl, imageData, imageMimeType } = req.body;
-
-        if (!webhookUrl) {
-            return res.status(500).json({
-                error: 'Server configuration error: SLACK_WEBHOOK_URL not configured'
-            });
-        }
 
         if (!messageData) {
             return res.status(400).json({
@@ -183,22 +246,53 @@ export default async function handler(req, res) {
             });
         }
 
-        if (!webhookUrl.startsWith('https://hooks.slack.com/services/')) {
+        if (!webhookUrl && !(botToken && botChannel)) {
+            return res.status(500).json({
+                error: 'Server configuration error: configure SLACK_WEBHOOK_URL or SLACK_BOT_TOKEN + SLACK_CHANNEL_ID'
+            });
+        }
+
+        if (webhookUrl && !webhookUrl.startsWith('https://hooks.slack.com/services/')) {
             return res.status(500).json({
                 error: 'Invalid Slack webhook URL configuration'
             });
         }
 
-        console.log('📤 Forwarding request to Slack webhook...');
+        console.log('📤 Sending Slack report...');
 
-        if (imageData) {
-            const slackUpload = await uploadImageToSlack(imageData, messageData.text, imageMimeType || 'image/png');
+        if (imageData && botToken && botChannel) {
+            const slackUpload = await uploadImageToSlack(
+                imageData,
+                messageData.text,
+                imageMimeType || 'image/png'
+            );
+
             if (slackUpload) {
                 return res.status(200).json({
                     success: true,
-                    message: 'Message and image sent to Slack successfully'
+                    message: 'Report image uploaded to Slack via bot',
+                    delivery: 'slack-bot-file'
                 });
             }
+
+            console.log('⚠️ Slack bot upload failed, falling back to webhook/image host');
+        }
+
+        if (!imageData && botToken && botChannel) {
+            const posted = await postSlackMessage(botToken, botChannel, messageData);
+            if (posted) {
+                return res.status(200).json({
+                    success: true,
+                    message: 'Message sent to Slack via bot',
+                    delivery: 'slack-bot-message'
+                });
+            }
+        }
+
+        if (!webhookUrl) {
+            return res.status(500).json({
+                error: 'Slack bot delivery failed and no webhook fallback is configured'
+            });
         }
 
         let resolvedImageUrl = imageUrl || null;
@@ -210,31 +304,16 @@ export default async function handler(req, res) {
 
         const slackPayload = buildSlackPayload(messageData, resolvedImageUrl);
         if (!resolvedImageUrl && imageData) {
-            slackPayload.text += '\n\n📊 Chart: [Image upload failed - check Company View for visual data]';
+            slackPayload.text += '\n\n📊 Chart: [Image upload failed - add SLACK_BOT_TOKEN + SLACK_CHANNEL_ID for reliable image delivery]';
         }
 
-        const slackResponse = await fetch(webhookUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(slackPayload)
-        });
+        await sendViaWebhook(webhookUrl, slackPayload);
 
-        if (slackResponse.ok) {
-            console.log('✅ Message sent to Slack successfully');
-            return res.status(200).json({
-                success: true,
-                message: 'Message sent to Slack successfully',
-                imageUploaded: Boolean(resolvedImageUrl)
-            });
-        }
-
-        console.error('❌ Slack API error:', slackResponse.status, slackResponse.statusText);
-        const errorText = await slackResponse.text();
-        return res.status(slackResponse.status).json({
-            error: 'Slack API error',
-            details: errorText || slackResponse.statusText
+        return res.status(200).json({
+            success: true,
+            message: 'Message sent to Slack successfully',
+            imageUploaded: Boolean(resolvedImageUrl),
+            delivery: resolvedImageUrl ? 'webhook-image-block' : 'webhook-text'
         });
 
     } catch (error) {
