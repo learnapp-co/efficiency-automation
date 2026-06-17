@@ -14,12 +14,12 @@ async function slackApi(method, token, body) {
     return response.json();
 }
 
-async function postSlackMessage(token, channel, messageData) {
+async function postSlackMessage(token, channel, text) {
     const result = await slackApi('chat.postMessage', token, {
         channel,
-        text: messageData.text,
-        username: messageData.username,
-        icon_emoji: messageData.icon_emoji
+        text,
+        unfurl_links: false,
+        unfurl_media: false
     });
 
     if (result.ok) {
@@ -31,38 +31,23 @@ async function postSlackMessage(token, channel, messageData) {
     return { ok: false, error: result.error, step: 'chat.postMessage' };
 }
 
-async function uploadBinaryToSlackUrl(uploadUrl, buffer, filename, mimeType) {
+function buildUploadFormData(buffer, filename, mimeType, fields = {}) {
     const formData = new FormData();
-    formData.append('filename', filename);
     formData.append('file', new Blob([buffer], { type: mimeType }), filename);
 
-    const response = await fetch(uploadUrl, {
-        method: 'POST',
-        body: formData
+    Object.entries(fields).forEach(([key, value]) => {
+        formData.append(key, value);
     });
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        return {
-            ok: false,
-            error: `${response.status} ${response.statusText}`,
-            details: errorText.slice(0, 300),
-            step: 'binary-upload'
-        };
-    }
-
-    return { ok: true };
+    return formData;
 }
 
-async function uploadImageToSlackLegacy(imageData, messageText, mimeType, token, channel) {
-    const buffer = Buffer.from(imageData, 'base64');
-    const extension = mimeType === 'image/jpeg' ? 'jpg' : 'png';
-    const filename = `efficiency-report.${extension}`;
-    const formData = new FormData();
-    formData.append('file', new Blob([buffer], { type: mimeType }), filename);
-    formData.append('channels', channel);
-    formData.append('initial_comment', messageText);
-    formData.append('title', 'Efficiency Report');
+async function uploadImageViaFilesUpload(token, channel, buffer, filename, mimeType, messageText) {
+    const formData = buildUploadFormData(buffer, filename, mimeType, {
+        channels: channel,
+        initial_comment: messageText,
+        title: 'Efficiency Report'
+    });
 
     const response = await fetch('https://slack.com/api/files.upload', {
         method: 'POST',
@@ -72,11 +57,58 @@ async function uploadImageToSlackLegacy(imageData, messageText, mimeType, token,
 
     const result = await response.json();
     if (result.ok) {
-        console.log('✅ Image uploaded via legacy files.upload');
-        return { ok: true, permalink: result.file?.permalink || 'slack-upload' };
+        console.log('✅ Image uploaded via files.upload');
+        return { ok: true, permalink: result.file?.permalink || 'slack-upload', method: 'files.upload' };
     }
 
     return { ok: false, error: result.error, step: 'files.upload' };
+}
+
+async function uploadImageViaExternalFlow(token, channel, buffer, filename, mimeType, messageText) {
+    const uploadUrlResult = await slackApi('files.getUploadURLExternal', token, {
+        filename,
+        length: buffer.length
+    });
+
+    if (!uploadUrlResult.ok) {
+        return { ok: false, error: uploadUrlResult.error, step: 'files.getUploadURLExternal' };
+    }
+
+    const formData = buildUploadFormData(buffer, filename, mimeType, { filename });
+    const binaryUpload = await fetch(uploadUrlResult.upload_url, {
+        method: 'POST',
+        body: formData
+    });
+
+    if (!binaryUpload.ok) {
+        const errorText = await binaryUpload.text();
+        return {
+            ok: false,
+            error: `${binaryUpload.status} ${binaryUpload.statusText}`,
+            details: errorText.slice(0, 300),
+            step: 'binary-upload'
+        };
+    }
+
+    const completeResult = await slackApi('files.completeUploadExternal', token, {
+        files: [{
+            id: uploadUrlResult.file_id,
+            title: 'Efficiency Report'
+        }],
+        channel_id: channel,
+        initial_comment: messageText
+    });
+
+    if (completeResult.ok) {
+        console.log('✅ Image uploaded via files.completeUploadExternal');
+        return {
+            ok: true,
+            permalink: completeResult.files?.[0]?.permalink || 'slack-upload',
+            method: 'files.completeUploadExternal'
+        };
+    }
+
+    return { ok: false, error: completeResult.error, step: 'files.completeUploadExternal' };
 }
 
 async function uploadImageToSlack(imageData, messageText, mimeType = 'image/png') {
@@ -90,58 +122,37 @@ async function uploadImageToSlack(imageData, messageText, mimeType = 'image/png'
     const extension = mimeType === 'image/jpeg' ? 'jpg' : 'png';
     const filename = `efficiency-report.${extension}`;
 
-    const uploadUrlResult = await slackApi('files.getUploadURLExternal', token, {
-        filename,
-        length: buffer.length
-    });
+    console.log('📦 Slack image payload size:', buffer.length, 'bytes');
 
-    if (!uploadUrlResult.ok) {
-        console.log('⚠️ files.getUploadURLExternal failed:', uploadUrlResult.error);
-        const legacyResult = await uploadImageToSlackLegacy(imageData, messageText, mimeType, token, channel);
-        return legacyResult;
-    }
-
-    const binaryUpload = await uploadBinaryToSlackUrl(
-        uploadUrlResult.upload_url,
-        buffer,
-        filename,
-        mimeType
-    );
-
-    if (!binaryUpload.ok) {
-        console.log('⚠️ Slack binary upload failed:', binaryUpload.error, binaryUpload.details);
-        const legacyResult = await uploadImageToSlackLegacy(imageData, messageText, mimeType, token, channel);
-        return legacyResult;
-    }
-
-    const completeResult = await slackApi('files.completeUploadExternal', token, {
-        files: [{
-            id: uploadUrlResult.file_id,
-            title: 'Efficiency Report'
-        }],
-        channel_id: channel,
-        initial_comment: messageText
-    });
-
-    if (completeResult.ok) {
-        console.log('✅ Image uploaded directly to Slack via bot');
+    if (buffer.length < 5000) {
         return {
-            ok: true,
-            permalink: completeResult.files?.[0]?.permalink || 'slack-upload'
+            ok: false,
+            error: `image_too_small (${buffer.length} bytes)`,
+            step: 'validate'
         };
     }
 
-    console.log('⚠️ files.completeUploadExternal failed:', completeResult.error);
-    const legacyResult = await uploadImageToSlackLegacy(imageData, messageText, mimeType, token, channel);
-    if (legacyResult.ok) {
-        return legacyResult;
+    const uploadAttempts = [
+        () => uploadImageViaFilesUpload(token, channel, buffer, filename, mimeType, messageText),
+        () => uploadImageViaExternalFlow(token, channel, buffer, filename, mimeType, messageText)
+    ];
+
+    let lastError = null;
+    for (const attempt of uploadAttempts) {
+        try {
+            const result = await attempt();
+            if (result.ok) {
+                return result;
+            }
+            lastError = result;
+            console.log('⚠️ Slack upload attempt failed:', result);
+        } catch (error) {
+            lastError = { ok: false, error: error.message, step: 'upload-exception' };
+            console.error('❌ Slack upload exception:', error);
+        }
     }
 
-    return {
-        ok: false,
-        error: completeResult.error || legacyResult.error || 'unknown_error',
-        step: 'files.completeUploadExternal'
-    };
+    return lastError || { ok: false, error: 'unknown_error', step: 'upload' };
 }
 
 async function uploadWithFormData(url, formData, label) {
@@ -180,7 +191,6 @@ async function uploadImageToImgbb(imageData) {
 
     const result = await response.json();
     if (result.success && result.data?.url) {
-        console.log('✅ Image uploaded to imgbb:', result.data.url);
         return result.data.url;
     }
 
@@ -199,43 +209,16 @@ async function uploadImageTo0x0(imageData, mimeType = 'image/png') {
 
     const imageUrl = (await response.text()).trim();
     if (imageUrl.startsWith('https://')) {
-        console.log('✅ Image uploaded to 0x0.st:', imageUrl);
         return imageUrl;
     }
 
-    console.log('⚠️ 0x0.st returned unexpected response:', imageUrl.slice(0, 200));
-    return null;
-}
-
-async function uploadImageToFreeimage(imageData) {
-    const apiKey = process.env.FREEIMAGE_API_KEY || '6d207e02198a847aa98d0a2a901485a5';
-    const response = await fetch('https://freeimage.host/api/1/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `key=${apiKey}&source=${encodeURIComponent(imageData)}&format=json`
-    });
-
-    if (!response.ok) {
-        console.log('⚠️ freeimage.host upload failed:', response.status);
-        return null;
-    }
-
-    const result = await response.json();
-    const imageUrl = result?.image?.display_url || result?.image?.url;
-    if (result.status_code === 200 && imageUrl) {
-        console.log('✅ Image uploaded to freeimage.host:', imageUrl);
-        return imageUrl;
-    }
-
-    console.log('⚠️ freeimage.host returned unexpected response:', result);
     return null;
 }
 
 async function resolvePublicImageUrl(imageData, mimeType = 'image/png') {
     const uploaders = [
         (data) => uploadImageToImgbb(data),
-        (data) => uploadImageTo0x0(data, mimeType),
-        (data) => uploadImageToFreeimage(data)
+        (data) => uploadImageTo0x0(data, mimeType)
     ];
 
     for (const upload of uploaders) {
@@ -300,6 +283,7 @@ export default async function handler(req, res) {
         const botToken = (process.env.SLACK_BOT_TOKEN || '').trim();
         const botChannel = (process.env.SLACK_CHANNEL_ID || '').trim();
         const { messageData, imageUrl, imageData, imageMimeType } = req.body;
+        const useBot = Boolean(botToken && botChannel);
 
         if (!messageData) {
             return res.status(400).json({
@@ -307,7 +291,7 @@ export default async function handler(req, res) {
             });
         }
 
-        if (!webhookUrl && !(botToken && botChannel)) {
+        if (!webhookUrl && !useBot) {
             return res.status(500).json({
                 error: 'Server configuration error: configure SLACK_WEBHOOK_URL or SLACK_BOT_TOKEN + SLACK_CHANNEL_ID'
             });
@@ -320,35 +304,49 @@ export default async function handler(req, res) {
         }
 
         console.log('📤 Sending Slack report...', {
-            hasBotToken: Boolean(botToken),
+            useBot,
             botChannel,
-            hasImage: Boolean(imageData),
+            imageBytes: imageData ? Buffer.from(imageData, 'base64').length : 0,
             hasWebhook: Boolean(webhookUrl)
         });
 
-        let botError = null;
+        if (useBot) {
+            if (imageData) {
+                const slackUpload = await uploadImageToSlack(
+                    imageData,
+                    messageData.text,
+                    imageMimeType || 'image/png'
+                );
 
-        if (imageData && botToken && botChannel) {
-            const slackUpload = await uploadImageToSlack(
-                imageData,
-                messageData.text,
-                imageMimeType || 'image/png'
-            );
+                if (slackUpload.ok) {
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Report image uploaded to Slack via bot',
+                        delivery: 'slack-bot-file',
+                        method: slackUpload.method
+                    });
+                }
 
-            if (slackUpload.ok) {
-                return res.status(200).json({
-                    success: true,
-                    message: 'Report image uploaded to Slack via bot',
-                    delivery: 'slack-bot-file'
+                const fallbackText = `${messageData.text}\n\n⚠️ Chart image failed to upload (${slackUpload.step}: ${slackUpload.error}). Check bot is invited to channel ${botChannel} and has files:write scope.`;
+                const textOnly = await postSlackMessage(botToken, botChannel, fallbackText);
+
+                if (textOnly.ok) {
+                    return res.status(200).json({
+                        success: true,
+                        message: 'Sent text via bot because image upload failed',
+                        delivery: 'slack-bot-text-only',
+                        botError: slackUpload
+                    });
+                }
+
+                return res.status(500).json({
+                    error: 'Slack bot failed to upload image and post fallback text',
+                    botError: slackUpload,
+                    textError: textOnly
                 });
             }
 
-            botError = slackUpload;
-            console.log('⚠️ Slack bot upload failed, falling back to webhook/image host:', slackUpload);
-        }
-
-        if (!imageData && botToken && botChannel) {
-            const posted = await postSlackMessage(botToken, botChannel, messageData);
+            const posted = await postSlackMessage(botToken, botChannel, messageData.text);
             if (posted.ok) {
                 return res.status(200).json({
                     success: true,
@@ -356,41 +354,30 @@ export default async function handler(req, res) {
                     delivery: 'slack-bot-message'
                 });
             }
-            botError = posted;
-        }
 
-        if (!webhookUrl) {
             return res.status(500).json({
-                error: 'Slack bot delivery failed and no webhook fallback is configured',
-                botError
+                error: 'Slack bot failed to post message',
+                botError: posted
             });
         }
 
         let resolvedImageUrl = imageUrl || null;
-
         if (!resolvedImageUrl && imageData) {
-            console.log('📤 Uploading base64 image to public host...');
             resolvedImageUrl = await resolvePublicImageUrl(imageData, imageMimeType || 'image/png');
         }
 
         const slackPayload = buildSlackPayload(messageData, resolvedImageUrl);
         if (!resolvedImageUrl && imageData) {
-            const botHint = botError
-                ? `Bot error (${botError.step}): ${botError.error}. Check bot is invited to channel ${botChannel} and has files:write scope.`
-                : 'Image upload failed.';
-            slackPayload.text += `\n\n📊 Chart: [${botHint}]`;
+            slackPayload.text += '\n\n📊 Chart: [Image upload failed - configure SLACK_BOT_TOKEN + SLACK_CHANNEL_ID]';
         }
 
         await sendViaWebhook(webhookUrl, slackPayload);
 
         return res.status(200).json({
             success: true,
-            message: botError
-                ? 'Sent via webhook fallback because bot upload failed'
-                : 'Message sent to Slack successfully',
+            message: 'Message sent to Slack successfully',
             imageUploaded: Boolean(resolvedImageUrl),
-            delivery: resolvedImageUrl ? 'webhook-image-block' : 'webhook-text',
-            botError
+            delivery: resolvedImageUrl ? 'webhook-image-block' : 'webhook-text'
         });
 
     } catch (error) {

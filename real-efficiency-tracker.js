@@ -13064,6 +13064,8 @@ class RealEfficiencyTracker {
                 if (result.success) {
                     if (result.delivery === 'slack-bot-file') {
                         this.showMessage('✅ Report image uploaded to Slack via bot!', 'success');
+                    } else if (result.delivery === 'slack-bot-text-only') {
+                        this.showMessage(`⚠️ Bot could not upload image (${result.botError?.error}). Text sent only — check bot is in channel with files:write scope.`, 'warning');
                     } else if (result.botError) {
                         this.showMessage(`⚠️ Bot upload failed (${result.botError.error}). Sent via webhook fallback.`, 'warning');
                     } else {
