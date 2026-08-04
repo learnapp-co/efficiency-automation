@@ -446,11 +446,10 @@ class RealEfficiencyTracker {
             },
             harish: {
                 name: 'Zero1 - Harish Team',
-                // Current members (June 2026: Vikas moved to Varsity, Aayush moved to Pre-production)
+                // Current members (August 2026: Pratik removed)
                 members: [
                     { name: 'Harish Rawat' },
                     { name: 'Rishabh Bangwal' },
-                    { name: 'Pratik Sharma' },
                     { name: 'Divyanshu Mishra' },
                     { name: 'Abhishek Sharma' }
                 ],
@@ -564,8 +563,7 @@ class RealEfficiencyTracker {
                 members: [
                     { name: 'Vandit' },
                     { name: 'Abid' },
-                    { name: 'Mudit' },
-                    { name: 'Aayush Srivastava' } // Moved from Zero1-Harish in June 2026
+                    { name: 'Mudit' }
                 ],
                 historicalMembers: [
                     { name: 'Vandit' },
@@ -11676,17 +11674,22 @@ class RealEfficiencyTracker {
         document.getElementById('member-chart-section').style.display = 'none';
     }
 
-    // Check if a month is locked for Company View (any team has it locked or it's in monthly view)
-    isMonthLockedForCompany(monthYear) {
-        // EXPLICIT CHECK: All completed months (everything before June 2026 is monthly-only)
-        const lockedMonths = [
+    getExplicitCompanyLockedMonths() {
+        return [
             // All 2025 months
             'January 2025', 'February 2025', 'March 2025', 'April 2025', 'May 2025',
             'June 2025', 'July 2025', 'August 2025', 'September 2025', 'October 2025',
             'November 2025', 'December 2025',
-            // 2026 months up to May
-            'January 2026', 'February 2026', 'March 2026', 'April 2026', 'May 2026'
+            // Completed 2026 months
+            'January 2026', 'February 2026', 'March 2026', 'April 2026', 'May 2026',
+            'June 2026', 'July 2026'
         ];
+    }
+
+    // Check if a month is locked for Company View (any team has it locked or it's in monthly view)
+    isMonthLockedForCompany(monthYear) {
+        // EXPLICIT CHECK: All completed months (weekly view only for current working month)
+        const lockedMonths = this.getExplicitCompanyLockedMonths();
         if (lockedMonths.includes(monthYear)) {
             console.log(`🔒 ${monthYear} is EXPLICITLY locked (completed data)`);
             return true;
@@ -11823,6 +11826,11 @@ class RealEfficiencyTracker {
                 }
             });
         }
+        
+        // Include explicitly locked months in monthly view
+        this.getExplicitCompanyLockedMonths().forEach(monthYear => {
+            allMonths.add(monthYear);
+        });
         
         // Convert to sorted array
         const monthsArray = Array.from(allMonths).sort((a, b) => {
