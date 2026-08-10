@@ -101,7 +101,7 @@ INSERT INTO teams (id, name, members, work_types) VALUES
 
 -- Audio Team (uses this.audioWorkTypes)
 ('audio', 'Audio Team',
- '["Amardeep", "Amandeep", "Bhavya Menon", "Rahul", "Ashutosh", "Naveen"]',
+ '["Amandeep", "Bhavya Menon", "Rahul", "Ashutosh", "Naveen"]',
  '{
    "reel": {"level": "L1", "name": "Reel", "perDay": 3},
    "short_videos_ads": {"level": "L1", "name": "Short Videos/Ads", "perDay": 2},

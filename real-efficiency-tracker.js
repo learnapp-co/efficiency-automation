@@ -469,7 +469,6 @@ class RealEfficiencyTracker {
             audio: {
                 name: 'Audio Team',
                 members: [
-                    { name: 'Amardeep' },
                     { name: 'Amandeep' },
                     { name: 'Bhavya Menon' },
                     { name: 'Rahul' },
@@ -477,7 +476,6 @@ class RealEfficiencyTracker {
                     { name: 'Naveen' }
                 ],
                 historicalMembers: [
-                    { name: 'Amardeep' },
                     { name: 'Amandeep' },
                     { name: 'Bhavya Menon' },
                     { name: 'Rahul' },
@@ -1744,15 +1742,6 @@ class RealEfficiencyTracker {
             'January 2025': {
                 isComplete: true,
                 monthlyData: {
-                    'Amardeep': { 
-                        weeks: [1.33, 4.67, 6.38, 9.25], 
-                        weeklyQualityRatings: [8, 8, 8, 8], // Using provided rating
-                        monthlyRating: 8, 
-                        target: 19, 
-                        totalOutput: 21.63, // From provided data
-                        workingDays: 19,
-                        efficiency: 113.82 // From provided data
-                    },
                     'Amandeep': { 
                         weeks: [3.08, 4.50, 4.00, 4.50], 
                         weeklyQualityRatings: [8, 8, 8, 8], 
@@ -1800,24 +1789,15 @@ class RealEfficiencyTracker {
                     }
                 },
                 teamSummary: {
-                    totalMembers: 6,
-                    avgRating: 6.67, // Average of all ratings (excluding 0 for Bhavya): (8+8+0+8+8+8)/6
-                    totalOutput: 119.68, // Sum: 21.63+16.08+4.50+23.63+23.46+30.88
-                    totalWorkingDays: 110, // Sum: 19+18+5+22+22+22
-                    avgEfficiency: 107.92 // Average: (113.82+89.35+90.00+107.39+106.63+140.34)/6
+                    totalMembers: 4,
+                    avgRating: 6,
+                    totalOutput: 82.47,
+                    totalWorkingDays: 71,
+                    avgEfficiency: 111.09
                 }            },
             'February 2025': {
                 isComplete: true,
                 monthlyData: {
-                    'Amardeep': { 
-                        weeks: [5.46, 4.96, 4.04, 4.17], 
-                        weeklyQualityRatings: [7, 7, 7, 7], 
-                        monthlyRating: 7, 
-                        target: 19, 
-                        totalOutput: 18.63, 
-                        workingDays: 19,
-                        efficiency: 98.03
-                    },
                     'Amandeep': { 
                         weeks: [6.33, 4.67, 4.75, 3.00], 
                         weeklyQualityRatings: [9, 9, 9, 9], 
@@ -1865,25 +1845,16 @@ class RealEfficiencyTracker {
                     }
                 },
                 teamSummary: {
-                    totalMembers: 6,
-                    avgRating: 7.83, // Average: (7+9+7+8+8+8)/6
-                    totalOutput: 111.95, // Sum: 18.63+18.75+15.50+17.58+19.42+21.67
-                    totalWorkingDays: 112, // Sum: 19+20+18+19+17+19
-                    avgEfficiency: 99.78 // Average: (98.03+93.75+86.11+92.54+114.22+114.04)/6
+                    totalMembers: 4,
+                    avgRating: 7.75,
+                    totalOutput: 74.17,
+                    totalWorkingDays: 73,
+                    avgEfficiency: 101.73
                 }
             },
             'March 2025': {
                 isComplete: true,
                 monthlyData: {
-                    'Amardeep': { 
-                        weeks: [4.83, 7.83, 4.67, 8.00], 
-                        weeklyQualityRatings: [8, 8, 8, 8], 
-                        monthlyRating: 8, 
-                        target: 19, 
-                        totalOutput: 25.33, 
-                        workingDays: 19,
-                        efficiency: 133.33
-                    },
                     'Amandeep': { 
                         weeks: [4.17, 6.17, 5.33, 5.33], 
                         weeklyQualityRatings: [8, 8, 8, 8], 
@@ -1931,25 +1902,16 @@ class RealEfficiencyTracker {
                     }
                 },
                 teamSummary: {
-                    totalMembers: 6,
-                    avgRating: 7.67, // Average: (8+8+8+7+7+8)/6
-                    totalOutput: 136.79, // Sum: 25.33+21.00+15.42+28.58+21.75+24.71
-                    totalWorkingDays: 109.5, // Sum: 19+17+19+17+18.5+19
-                    avgEfficiency: 125.63 // Average: (133.33+123.53+81.14+168.14+117.57+130.04)/6
+                    totalMembers: 4,
+                    avgRating: 7.5,
+                    totalOutput: 90.46,
+                    totalWorkingDays: 73.5,
+                    avgEfficiency: 124.22
                 }
             },
             'April 2025': {
                 isComplete: true,
                 monthlyData: {
-                    'Amardeep': { 
-                        weeks: [4.17, 3.83, 4.17, 10.33], 
-                        weeklyQualityRatings: [7, 7, 7, 7], 
-                        monthlyRating: 7, 
-                        target: 22, 
-                        totalOutput: 22.50, 
-                        workingDays: 22,
-                        efficiency: 102.27
-                    },
                     'Amandeep': { 
                         weeks: [5.33, 6.83, 6.33, 7.83], 
                         weeklyQualityRatings: [7, 7, 7, 7], 
@@ -1997,25 +1959,16 @@ class RealEfficiencyTracker {
                     }
                 },
                 teamSummary: {
-                    totalMembers: 6,
-                    avgRating: 7.00, // Average: (7+7+7+7+7+7)/6
-                    totalOutput: 127.75, // Sum: 22.50+26.33+17.75+20.96+22.67+17.54
-                    totalWorkingDays: 128, // Sum: 22+22+22+20+22+18
-                    avgEfficiency: 101.32 // Average: (102.27+119.70+80.68+104.79+103.03+97.45)/6
+                    totalMembers: 4,
+                    avgRating: 7,
+                    totalOutput: 78.92,
+                    totalWorkingDays: 82,
+                    avgEfficiency: 96.49
                 }
             },
             'May 2025': {
                 isComplete: true,
                 monthlyData: {
-                    'Amardeep': { 
-                        weeks: [10.67, 4.00, 6.17, 8.17], 
-                        weeklyQualityRatings: [8, 8, 8, 8], 
-                        monthlyRating: 8, 
-                        target: 22, 
-                        totalOutput: 29.00, 
-                        workingDays: 22,
-                        efficiency: 131.82
-                    },
                     'Amandeep': { 
                         weeks: [5.50, 5.71, 5.00, 9.17], 
                         weeklyQualityRatings: [8, 8, 8, 8], 
@@ -2063,25 +2016,16 @@ class RealEfficiencyTracker {
                     }
                 },
                 teamSummary: {
-                    totalMembers: 6,
-                    avgRating: 7.00, // Average: (8+8+6+8+5+7)/6
-                    totalOutput: 157.14, // Sum: 29.00+25.38+17.88+32.96+28.04+23.88
-                    totalWorkingDays: 129, // Sum: 22+22+22+22+21+20
-                    avgEfficiency: 121.86 // Average: (131.82+115.34+81.25+149.81+133.53+119.38)/6
+                    totalMembers: 4,
+                    avgRating: 6.5,
+                    totalOutput: 102.76,
+                    totalWorkingDays: 85,
+                    avgEfficiency: 120.99
                 }
             },
             'June 2025': {
                 isComplete: true,
                 monthlyData: {
-                    'Amardeep': { 
-                        weeks: [4.83, 4.67, 4.17, 5.83], 
-                        weeklyQualityRatings: [8, 8, 8, 8], 
-                        monthlyRating: 8, 
-                        target: 18, 
-                        totalOutput: 19.50, 
-                        workingDays: 18,
-                        efficiency: 108.33
-                    },
                     'Amandeep': { 
                         weeks: [4.67, 6.38, 5.33, 4.33], 
                         weeklyQualityRatings: [8, 8, 8, 8], 
@@ -2129,25 +2073,16 @@ class RealEfficiencyTracker {
                     }
                 },
                 teamSummary: {
-                    totalMembers: 6,
-                    avgRating: 7.33, // Average: (8+8+6+7+8+7)/6
-                    totalOutput: 138.41, // Sum: 19.50+20.71+17.08+29.33+25.46+26.33
-                    totalWorkingDays: 122, // Sum: 18+20+21+21+21+21
-                    avgEfficiency: 113.26 // Average: (108.33+103.54+81.35+139.68+121.23+125.40)/6
+                    totalMembers: 4,
+                    avgRating: 7,
+                    totalOutput: 98.2,
+                    totalWorkingDays: 84,
+                    avgEfficiency: 116.92
                 }
             },
             'July 2025': {
                 isComplete: true,
                 monthlyData: {
-                    'Amardeep': { 
-                        weeks: [5.50, 5.67, 9.17, 9.17], 
-                        weeklyQualityRatings: [7, 7, 7, 7], 
-                        monthlyRating: 7, 
-                        target: 23, 
-                        totalOutput: 29.50, 
-                        workingDays: 23,
-                        efficiency: 128.28
-                    },
                     'Amandeep': { 
                         weeks: [6.08, 5.50, 5.83, 5.58], 
                         weeklyQualityRatings: [7, 7, 7, 7], 
@@ -2195,25 +2130,16 @@ class RealEfficiencyTracker {
                     }
                 },
                 teamSummary: {
-                    totalMembers: 6,
-                    avgRating: 7.00, // Average: (7+7+7+7+7+7)/6
-                    totalOutput: 139.08, // Sum: 29.50+23.00+14.50+27.79+20.50+23.79
-                    totalWorkingDays: 132, // Sum: 23+23+18+22+23+23
-                    avgEfficiency: 104.62 // Average: (128.28+99.99+80.56+126.32+89.13+103.45)/6
+                    totalMembers: 4,
+                    avgRating: 7,
+                    totalOutput: 86.58,
+                    totalWorkingDays: 86,
+                    avgEfficiency: 99.87
                 }
             },
             'August 2025': {
                 isComplete: true,
                 monthlyData: {
-                    'Amardeep': { 
-                        weeks: [7.25, 4.00, 7.33, 4.83], 
-                        weeklyQualityRatings: [7, 7, 7, 7], 
-                        monthlyRating: 7, 
-                        target: 20, 
-                        totalOutput: 23.41, 
-                        workingDays: 20,
-                        efficiency: 117.05
-                    },
                     'Amandeep': { 
                         weeks: [4.50, 6.46, 6.17, 5.50], 
                         weeklyQualityRatings: [9, 9, 9, 9], 
@@ -2261,11 +2187,11 @@ class RealEfficiencyTracker {
                     }
                 },
                 teamSummary: {
-                    totalMembers: 6,
-                    avgRating: 7.67, // Average: (7+9+7+8+7+9)/6
-                    totalOutput: 134.07, // Sum: 23.41+22.63+18.50+25.12+23.32+21.09
-                    totalWorkingDays: 116, // Sum: 20+20+17+19+20+20
-                    avgEfficiency: 115.55 // Average: (117.05+113.15+108.82+132.21+116.60+105.45)/6
+                    totalMembers: 4,
+                    avgRating: 7.75,
+                    totalOutput: 88.03,
+                    totalWorkingDays: 76,
+                    avgEfficiency: 115.77
                 }
             }
         };
