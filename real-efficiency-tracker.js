@@ -381,7 +381,9 @@ class RealEfficiencyTracker {
                     { name: 'Anjali Rawat', level: 'L2' },
                     { name: 'Swati Juyal', level: 'L2' },
                     { name: 'Dheeraj Rajvania', level: 'L1' }, // Moved from Zero1-Bratish in June 2026
-                    { name: 'Satyavrat Sharma' } // Moved from Varsity in June 2026
+                    { name: 'Satyavrat Sharma' }, // Moved from Varsity in June 2026
+                    { name: 'Rohit' }, // Moved from Social in August 2026
+                    { name: 'Anish' } // Moved from Social in August 2026
                 ],
                 historicalMembers: [
                     { name: 'Deepak', level: 'L1' },
@@ -390,7 +392,9 @@ class RealEfficiencyTracker {
                     { name: 'Satyam Gupta', level: 'L3' },
                     { name: 'Deepak Kumar', level: 'L3' },
                     { name: 'Dheeraj Rajvania', level: 'L1' },
-                    { name: 'Satyavrat Sharma' }
+                    { name: 'Satyavrat Sharma' },
+                    { name: 'Rohit' },
+                    { name: 'Anish' }
                 ],
                 // Note: Satyam Gupta removed from active members for Sept 2025 onwards but remains in historical data
                 workLevels: this.levelMapping,
@@ -597,8 +601,6 @@ class RealEfficiencyTracker {
                 members: [
                     { name: 'Khushi' },
                     { name: 'Siya' },
-                    { name: 'Rohit' },
-                    { name: 'Anish' },
                     { name: 'Tanya' },
                     { name: 'Satyam' }
                 ],
