@@ -352,7 +352,7 @@ class RealEfficiencyTracker {
             'subtitles_qc_fix': { level: 'All', name: 'Subtitles QC/Fix', perDay: 42 },
             'strategy_presentations': { level: 'All', name: 'Strategy (Presentations)', perDay: 7 },
             'shoot': { level: 'All', name: 'Shoot', perDay: 7 },
-            'retro': { level: 'All', name: 'Retro', perDay: 28 },
+            'retro': { level: 'All', name: 'Retro', perDay: 14 },
             'rejection_meeting': { level: 'All', name: 'Rejection Meeting', perDay: 7 }
         };
 
