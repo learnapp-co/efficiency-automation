@@ -432,7 +432,8 @@ class RealEfficiencyTracker {
                     { name: 'Akriti Singh' },
                     { name: 'Mohd. Wasim' },
                     { name: 'Ajay' }, // Added June 2026
-                    { name: 'Deepak Kumar' } // Moved from B2B in June 2026
+                    { name: 'Deepak Kumar' }, // Moved from B2B in June 2026
+                    { name: 'Satyam' } // Moved from Social in September 2026
                 ],
                 // Historical members (for data display in completed months)
                 historicalMembers: [
@@ -443,7 +444,8 @@ class RealEfficiencyTracker {
                     { name: 'Dheeraj Rajvania' },
                     { name: 'Manoj Kumar' },
                     { name: 'Ajay' },
-                    { name: 'Deepak Kumar' }
+                    { name: 'Deepak Kumar' },
+                    { name: 'Satyam' }
                 ],
                 workLevels: this.zero1LevelMapping,
                 sheetRange: 'Zero1 - Bratish - 2025!A1:BT1000'
@@ -602,7 +604,7 @@ class RealEfficiencyTracker {
                     { name: 'Khushi' },
                     { name: 'Siya' },
                     { name: 'Tanya' },
-                    { name: 'Satyam' }
+                    { name: 'Vedant' } // Added September 2026
                 ],
                 historicalMembers: [
                     { name: 'Khushi' },
@@ -612,7 +614,8 @@ class RealEfficiencyTracker {
                     { name: 'Swapnil' },
                     { name: 'Tanya' },
                     { name: 'Somya' },
-                    { name: 'Satyam' }
+                    { name: 'Satyam' },
+                    { name: 'Vedant' }
                 ],
                 workLevels: this.socialLevelMapping,
                 sheetRange: 'Social - 2025!A1:BT1000'
