@@ -584,7 +584,9 @@ class RealEfficiencyTracker {
                 members: [
                     { name: 'Nishita' },
                     { name: 'Shuchita' },
-                    { name: 'Sahil Mathur' }
+                    { name: 'Sahil Mathur' },
+                    { name: 'Ashmita Kushwah' },
+                    { name: 'Risav Chakraborty' }
                 ],
                 historicalMembers: [
                     { name: 'Nishita' },
@@ -593,7 +595,9 @@ class RealEfficiencyTracker {
                     { name: 'Meghna' },
                     { name: 'Shuchita' },
                     { name: 'Sahil Mathur' },
-                    { name: 'Sanandan' }
+                    { name: 'Sanandan' },
+                    { name: 'Ashmita Kushwah' },
+                    { name: 'Risav Chakraborty' }
                 ],
                 workLevels: this.contentLevelMapping,
                 sheetRange: 'Content - 2025!A1:BT1000'
