@@ -528,7 +528,6 @@ class RealEfficiencyTracker {
                 members: [
                     { name: 'Supriya' },
                     { name: 'Tilak' },
-                    { name: 'Chandan' },
                     { name: 'Harshita' },
                     { name: 'Tushar' }
                 ],
