@@ -457,7 +457,8 @@ class RealEfficiencyTracker {
                     { name: 'Harish Rawat' },
                     { name: 'Rishabh Bangwal' },
                     { name: 'Divyanshu Mishra' },
-                    { name: 'Abhishek Sharma' }
+                    { name: 'Abhishek Sharma' },
+                    { name: 'Harish P' }
                 ],
                 // Historical members (for data display in completed months)
                 historicalMembers: [
@@ -467,7 +468,8 @@ class RealEfficiencyTracker {
                     { name: 'Divyanshu Mishra' },
                     { name: 'Vikas Kumar' },
                     { name: 'Abhishek Sharma' },
-                    { name: 'Aayush Srivastava' }
+                    { name: 'Aayush Srivastava' },
+                    { name: 'Harish P' }
                 ],
                 workLevels: this.harishLevelMapping,
                 sheetRange: 'Zero1 - Harish - 2025!A1:BT1000'
