@@ -34,6 +34,39 @@ async function slackApiForm(method, token, params) {
     return response.json();
 }
 
+async function ensureBotInChannel(token, channelId) {
+    const auth = await slackApi('auth.test', token, {});
+    if (!auth.ok) {
+        return {
+            ok: false,
+            error: auth.error,
+            step: 'auth.test',
+            details: 'Invalid SLACK_BOT_TOKEN — regenerate the bot token in Slack and update Vercel.'
+        };
+    }
+
+    const join = await slackApi('conversations.join', token, { channel: channelId });
+    if (join.ok || join.error === 'already_in_channel') {
+        return { ok: true, botUserId: auth.user_id, botName: auth.user };
+    }
+
+    const info = await slackApi('conversations.info', token, { channel: channelId });
+    const isPrivate = Boolean(info.ok && info.channel?.is_private);
+    const inviteHint = isPrivate
+        ? `Private channel: in Slack run /invite @${auth.user} inside channel ${channelId}.`
+        : `Public channel: add OAuth scope channels:join to the Slack app, reinstall, update SLACK_BOT_TOKEN in Vercel, redeploy. Or run /invite @${auth.user}.`;
+
+    return {
+        ok: false,
+        error: join.error || 'not_in_channel',
+        step: 'conversations.join',
+        botUserId: auth.user_id,
+        botName: auth.user,
+        channelId,
+        details: `Token is for bot @${auth.user} (${auth.user_id}). ${inviteHint}`
+    };
+}
+
 async function postSlackMessage(token, channel, text) {
     const result = await slackApi('chat.postMessage', token, {
         channel,
@@ -317,6 +350,18 @@ export default async function handler(req, res) {
         });
 
         if (useBot) {
+            const channelReady = await ensureBotInChannel(botToken, botChannel);
+            if (!channelReady.ok) {
+                return res.status(500).json({
+                    error: 'Slack bot is not in the target channel',
+                    botError: channelReady
+                });
+            }
+            console.log('✅ Slack bot channel check passed', {
+                bot: channelReady.botName,
+                channel: botChannel
+            });
+
             if (imageData) {
                 const slackUpload = await uploadImageToSlack(
                     imageData,
