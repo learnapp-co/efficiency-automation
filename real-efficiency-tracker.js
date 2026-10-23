@@ -12642,11 +12642,6 @@ class RealEfficiencyTracker {
 
 
     async sendWeeklyReportToSlack() {
-        if (!this.slackWebhookUrl) {
-            this.promptForSlackWebhook();
-            return;
-        }
-
         if (!this.currentWeek || !this.currentTeam) {
             this.showMessage('Please select a team and week first', 'error');
             return;
@@ -12678,11 +12673,6 @@ class RealEfficiencyTracker {
     }
 
     async sendMonthlyReportToSlack() {
-        if (!this.slackWebhookUrl) {
-            this.promptForSlackWebhook();
-            return;
-        }
-
         if (!this.currentTeam) {
             this.showMessage('Please select a team first', 'error');
             return;
@@ -12929,22 +12919,24 @@ class RealEfficiencyTracker {
                 }
             } else {
                 const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
-                throw new Error(`Server error: ${errorData.error || response.statusText}`);
+                const botDetail = errorData.botError?.error || errorData.textError?.error;
+                const detail = botDetail || errorData.details || errorData.error || response.statusText;
+                throw new Error(`Server error: ${detail}`);
             }
 
         } catch (error) {
             console.error('❌ Error sending to Slack:', error);
             
-            // Check if it's a network or server error
             if (error.message.includes('Failed to fetch')) {
                 this.showMessage('❌ Network error: Could not connect to server. Please check your internet connection.', 'error');
-            } else if (error.message.includes('Slack API error')) {
-                this.showMessage('❌ Slack webhook error: Please check your webhook URL is correct and active.', 'error');
-                // Clear the webhook URL if it's invalid
-                this.slackWebhookUrl = null;
-                localStorage.removeItem('slackWebhookUrl');
+            } else if (error.message.includes('SLACK_BOT_TOKEN') || error.message.includes('Server configuration error')) {
+                this.showMessage('❌ Slack bot is not configured on the server. Set SLACK_BOT_TOKEN and SLACK_CHANNEL_ID in Vercel and redeploy.', 'error');
             } else {
-                this.showMessage('❌ Failed to send report to Slack: ' + error.message, 'error');
+                this.showMessage(
+                    '❌ Failed to send report to Slack: ' + error.message +
+                    ' — Check Vercel env (bot token + channel ID), redeploy, and invite the bot to the channel with chat:write and files:write.',
+                    'error'
+                );
             }
             throw error;
         }
@@ -13010,13 +13002,7 @@ class RealEfficiencyTracker {
 
         } catch (error) {
             console.error('❌ Error sending company report:', error);
-            
-            // If the webhook was cleared due to being invalid, show appropriate message
-            if (!this.slackWebhookUrl) {
-                this.showMessage('❌ Slack webhook URL was invalid. Please configure a new webhook URL and try again.', 'error');
-            } else {
-                this.showMessage('❌ Failed to send company report to Slack', 'error');
-            }
+            this.showMessage('❌ Failed to send company report to Slack: ' + (error.message || 'Unknown error'), 'error');
         }
     }
 
