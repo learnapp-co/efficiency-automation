@@ -12920,7 +12920,10 @@ class RealEfficiencyTracker {
             } else {
                 const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
                 const botDetail = errorData.botError?.error || errorData.textError?.error;
-                const detail = botDetail || errorData.details || errorData.error || response.statusText;
+                const botHint = errorData.botError?.details || errorData.textError?.details;
+                const detail = [botDetail, botHint, errorData.details, errorData.error, response.statusText]
+                    .filter(Boolean)
+                    .join(' — ') || 'Unknown error';
                 throw new Error(`Server error: ${detail}`);
             }
 

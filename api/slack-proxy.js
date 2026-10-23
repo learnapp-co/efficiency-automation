@@ -48,7 +48,10 @@ async function postSlackMessage(token, channel, text) {
     }
 
     console.log('⚠️ chat.postMessage failed:', result.error);
-    return { ok: false, error: result.error, step: 'chat.postMessage' };
+    const details = result.error === 'not_in_channel'
+        ? `Invite the OAuth bot user to channel ${channel} (not just a webhook). Channel ID must match SLACK_CHANNEL_ID in Vercel exactly.`
+        : result.response_metadata?.messages?.join(', ');
+    return { ok: false, error: result.error, step: 'chat.postMessage', details, channelId: channel };
 }
 
 async function uploadImageViaExternalFlow(token, channel, buffer, filename, mimeType, messageText) {
@@ -106,11 +109,15 @@ async function uploadImageViaExternalFlow(token, channel, buffer, filename, mime
         };
     }
 
+    const details = completeResult.error === 'not_in_channel'
+        ? `Invite the OAuth bot user to channel ${channel} (not just a webhook). Channel ID must match SLACK_CHANNEL_ID in Vercel exactly.`
+        : completeResult.response_metadata?.messages?.join(', ');
     return {
         ok: false,
         error: completeResult.error,
         step: 'files.completeUploadExternal',
-        details: completeResult.response_metadata?.messages?.join(', ')
+        details,
+        channelId: channel
     };
 }
 
@@ -276,6 +283,13 @@ export default async function handler(req, res) {
         const botChannel = (process.env.SLACK_CHANNEL_ID || '').trim();
         const { messageData, imageUrl, imageData, imageMimeType } = req.body;
         const useBot = Boolean(botToken && botChannel);
+
+        if (useBot && !/^C[A-Z0-9]+$/i.test(botChannel)) {
+            return res.status(500).json({
+                error: 'Invalid SLACK_CHANNEL_ID format (expected Slack channel ID like C0123456789, not a channel name)',
+                channelId: botChannel
+            });
+        }
 
         if (!messageData) {
             return res.status(400).json({
