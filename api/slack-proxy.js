@@ -50,6 +50,17 @@ async function ensureBotInChannel(token, channelId) {
         return { ok: true, botUserId: auth.user_id, botName: auth.user };
     }
 
+    // Manual /invite works without channels:join — still try posting
+    if (join.error === 'missing_scope') {
+        console.log('⚠️ channels:join not granted; relying on bot already invited to channel');
+        return {
+            ok: true,
+            botUserId: auth.user_id,
+            botName: auth.user,
+            joinSkipped: true
+        };
+    }
+
     const info = await slackApi('conversations.info', token, { channel: channelId });
     const isPrivate = Boolean(info.ok && info.channel?.is_private);
     const inviteHint = isPrivate
